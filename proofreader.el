@@ -310,8 +310,7 @@
 (defvar proofreader-passive-voice-regex
   (let ((p1 (proofreader--list-to-or-regex proofreader-morningstars))
         (p2 (proofreader--list-to-or-regex proofreader-irregulars)))
-    (format "\\b(%s)\\b[ ]*(%s)\\b" p1 p2)
-    ))
+    (format "\\b\\(%s\\)\\b[[:space:]]*\\(\\w+ed\\|\\(?:%s\\)\\)\\b" p1 p2)))
 
 (defun proofreader-highlight-passive-voice ()
   "Highlight phrases using the passive voice."
