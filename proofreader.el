@@ -27,6 +27,10 @@
 
 ;;; Commentary:
 ;; Proofreader provides tooling to help with proof-reading compositions.
+;;
+;; Heavily inspired by the blog and code from these articles:
+;; https://simonwillison.net/2024/Dec/14/improve-your-writing/#atom-everything
+;; https://matt.might.net/articles/shell-scripts-for-passive-voice-weasel-words-duplicates/
 
 ;;; Code:
 
@@ -66,11 +70,13 @@
     very
     "are a number"
     "is a number")
-  "List of weasel words, ie phrases or words that sound good without conveying information")
+  "List words or phrases that sound good without conveying information"
+  :group 'proofreader
+  :type '(repeat string))
 
 (defun proofreader--list-to-or-regex (l)
   "Return a regex string that ORs the items in the list L."
-  (s-join "\\|" (seq-map (lambda (i) (prin1-to-string i t)) l)))
+  (string-join (seq-map (lambda (i) (prin1-to-string i t)) l) "\\|"))
 
 (defvar proofreader-weasel-regex
   (proofreader--list-to-or-regex proofreader-weasel-words)
@@ -84,19 +90,7 @@
     (save-excursion
       (goto-char (point-min))
       (while (re-search-forward regex nil t)
-        (highlight-regexp regex 'view-highlight-face)))))
-
-(defun proofreader-start ()
-  "Begin active proofreading of text in buffer."
-  (interactive)
-  (highlight-regexp proofreader-weasel-regex 'view-highlight-face)
-  )
-
-(defun proofreader-quit ()
-  "Stop active proofreader features."
-  (interactive)
-  (unhighlight-regexp proofreader-weasel-regex)
-  )
+        (highlight-regexp regex 'highlight)))))
 
 ;;
 ;; Passive voice
@@ -278,7 +272,9 @@
     withstood
     wrung
     written)
-  "List of words to help recognize the passive voice.")
+  "List of words to help recognize the passive voice."
+  :group 'proofreader
+  :type '(repeat string))
 
 (defcustom proofreader-morningstars
   '(am
@@ -306,7 +302,9 @@
     could
     seems
     appears)
-  "Prefix words to use before the irregulars to recognize passive voice.")
+  "Prefix words to use before the irregulars to recognize passive voice."
+  :group 'proofreader
+  :type '(repeat string))
 
 
 ;; egrep -n -i --color \
@@ -319,27 +317,43 @@
     (format "\\b(%s)\\b[ ]*(%s)\\b" p1 p2)
     ))
 
+
 ;;
 ;; Double words
 ;;
 
-(defun proofreader-duplicate-words ()
-  (save-excursion
-    (goto-char (point-min))
-
-    ;; current-word
-    (forward-word 1)
+(defun proofreader-highlight-repeated-words ()
+  "Highlight instances where the same word appears twice in succession."
+  (interactive)
+  (highlight-regexp "\\(\\<\\w+\\>\\)\\s-*\n?\\s-*\\1\\>" 'idle-highlight))
 
 
-    ))
+;;
+;; Final Configuration
+;;
+
+(defun proofreader-start ()
+  "Begin active proofreading of text in buffer."
+  (interactive)
+
+  (highlight-regexp proofreader-weasel-regex 'highlight)
+
+  (proofreader-highlight-repeated-words)
+
+  )
+
+(defun proofreader-quit ()
+  "Stop active proofreader features."
+  (interactive)
+  ;; (unhighlight-regexp proofreader-weasel-regex)
+  (unhighlight-regexp t))
+
+(defalias 'proofreader-stop 'proofreader-quit)
 
 
 ;;
 ;; Misc workspace
 ;;
-
-;; https://simonwillison.net/2024/Dec/14/improve-your-writing/#atom-everything
-;; https://matt.might.net/articles/shell-scripts-for-passive-voice-weasel-words-duplicates/
 
 (defun search-word-list (&optional my-word-list)
   "Search current buffer for any word in MY-WORD-LIST."
