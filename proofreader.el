@@ -34,15 +34,34 @@
 
 ;;; Code:
 
-;;;###autoload
-(define-minor-mode proofreader-mode
-  "Toggle minor mode `proofreader-mode' on and off."
-  :init-value nil
-  :lighter " pf")
+(defun proofreader--read-file-list (file)
+  "Read FILE and return phrase list."
+  (when (and file (file-exists-p file))
+    (with-temp-buffer
+      (insert-file file)
+      (split-string (buffer-substring (point-min) (point-max)) "\n" t "\s*"))))
 
 (defun proofreader--list-to-or-regex (l)
   "Return a regex string that ORs the items in the list L."
   (string-join (seq-map (lambda (i) (prin1-to-string i t)) l) "\\|"))
+
+(defcustom proofreader-check-spelling t
+  "If true, highlight misspelled words found in buffer."
+  :group 'proofreader
+  :type 'boolean)
+
+(defcustom proofreader-check-for-weasel-words t
+  "If true, highlight weasel words found in buffer."
+  :type 'boolean)
+
+(defcustom proofreader-check-for-passive-voice t
+  "If true, highlight passages that use the passive voice in buffer."
+  :type 'boolean)
+
+(defcustom proofreader-check-for-double-words t
+  "If true, highlight duplicated words found in buffer."
+  :type 'boolean)
+
 
 ;;
 ;; Weasel Words
@@ -75,24 +94,23 @@
     "are a number"
     "is a number")
   "List words or phrases that sound good without conveying information"
-  :group 'proofreader
   :type '(repeat string))
 
-(defvar proofreader-weasel-regex
-  (proofreader--list-to-or-regex proofreader-weasel-words)
-  "Regex string to use use when searching for weasel words")
+(defun proofreader-weasel-regex ()
+  "Return the regex string used to recognize weasel words."
+  (proofreader--list-to-or-regex proofreader-weasel-words))
 
 (defun proofreader-highlight-weasel-words ()
   "Highlight weasel words found in buffer."
   (interactive)
-  (highlight-regexp proofreader-weasel-regex 'highlight))
+  (highlight-regexp (proofreader-weasel-regex) 'highlight))
 
 
 ;;
 ;; Passive voice
 ;;
 
-(defcustom proofreader-irregulars
+(defcustom proofreader-irregular-words
   '(awoken
     been
     born
@@ -272,7 +290,7 @@
   :group 'proofreader
   :type '(repeat string))
 
-(defcustom proofreader-morningstars
+(defcustom proofreader-morningstar-words
   '(am
     are
     is
@@ -302,20 +320,16 @@
   :group 'proofreader
   :type '(repeat string))
 
-
-;; egrep -n -i --color \
-;;  "\\b(am|are|were|being|is|been|was|be)\
-;; \\b[ ]*(\w+ed|($irregulars))\\b" $*
-
-(defvar proofreader-passive-voice-regex
-  (let ((p1 (proofreader--list-to-or-regex proofreader-morningstars))
-        (p2 (proofreader--list-to-or-regex proofreader-irregulars)))
+(defun proofreader-passive-voice-regex ()
+  "Return the regex string used to recognize use of the passive voice."
+  (let ((p1 (proofreader--list-to-or-regex proofreader-morningstar-words))
+        (p2 (proofreader--list-to-or-regex proofreader-irregular-words)))
     (format "\\b\\(%s\\)\\b[[:space:]]*\\(\\w+ed\\|\\(?:%s\\)\\)\\b" p1 p2)))
 
 (defun proofreader-highlight-passive-voice ()
   "Highlight phrases using the passive voice."
   (interactive)
-  (highlight-regexp proofreader-passive-voice-regex 'idle-highlight))
+  (highlight-regexp (proofreader-passive-voice-regex) 'idle-highlight))
 
 
 ;;
@@ -332,20 +346,69 @@
 ;; Final Configuration
 ;;
 
+(defcustom proofreader-weasel-words-file nil
+  "Location of file with values to override `proofreader-weasel-words'."
+  :type 'file
+  :initialize #'custom-initialize-reset
+  :set (lambda (symbol value)
+         (set-default symbol value)
+         (when-let ((words (proofreader--read-file-list value)))
+           (customize-set-value 'proofreader-weasel-words words))))
+
+(defcustom proofreader-irregular-words-file nil
+  "Location of file with values to override `proofreader-irregular-words'."
+  :type 'file
+  :initialize #'custom-initialize-reset
+  :set (lambda (symbol value)
+         (set-default symbol value)
+         (when-let ((words (proofreader--read-file-list value)))
+           (customize-set-value 'proofreader-irregular-words words))))
+
+(defcustom proofreader-morningstar-words-file nil
+  "Location of file with values to override `proofreader-morningstar-words'."
+  :type 'file
+  :initialize #'custom-initialize-reset
+  :set (lambda (symbol value)
+         (set-default symbol value)
+         (when-let ((words (proofreader--read-file-list value)))
+           (customize-set-value 'proofreader-morningstar-words words))))
+
 (defun proofreader-start ()
   "Begin active proofreading of text in buffer."
   (interactive)
-  (proofreader-highlight-weasel-words)
-  (proofreader-highlight-passive-voice)
-  (proofreader-highlight-repeated-words))
+  (when proofreader-check-spelling
+    (flyspell-buffer))
+  (when proofreader-check-for-weasel-words
+    (proofreader-highlight-weasel-words))
+  (when proofreader-check-for-passive-voice
+    (proofreader-highlight-passive-voice))
+  (when proofreader-check-for-double-words
+    (proofreader-highlight-repeated-words)))
+
+(defalias 'proofreader-enable 'proofreader-start)
 
 (defun proofreader-quit ()
   "Stop active proofreader features."
   (interactive)
-  ;; (unhighlight-regexp proofreader-weasel-regex)
+  (flyspell-mode-off)
   (unhighlight-regexp t))
 
 (defalias 'proofreader-stop 'proofreader-quit)
+(defalias 'proofreader-disable 'proofreader-quit)
+
+(defun proofreader-toggle ()
+  "Toggle proofreader mode from current state."
+  (if proofreader-mode
+      (proofreader-disable)
+    (proofreader-enable)))
+
+;;;###autoload
+(define-minor-mode proofreader-mode
+  "Toggle minor mode `proofreader-mode' on and off."
+  :init-value nil
+  ;; :lighter " pf"
+  :after-hook (proofreader-toggle)
+  :keymap (make-sparse-keymap))
 
 (provide 'proofreader)
 ;;; proofreader.el ends here
