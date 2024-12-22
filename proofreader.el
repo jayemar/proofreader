@@ -347,31 +347,5 @@
 
 (defalias 'proofreader-stop 'proofreader-quit)
 
-
-;;
-;; Misc workspace
-;; Mostly functions suggested by gptel
-
-(defun proofreader-highlight-weasel-words-gptel ()
-  "Highlight all occurrences of `proofreader-weasel-words' in current buffer."
-  (let ((regex proofreader-weasel-regex))
-    (unhighlight-regexp t) ;; Clear existing highlights
-    (save-excursion
-      (goto-char (point-min))
-      (while (re-search-forward regex nil t)
-        (highlight-regexp regex 'highlight)))))
-
-(defun proofreader-search-word-list (&optional my-word-list)
-  "Search current buffer for any word in MY-WORD-LIST."
-  (interactive)
-  (let ((my-word-list proofreader-weasel-words)
-        (matches nil))
-    (save-excursion
-      (dolist (word my-word-list)
-        (goto-char (point-min))
-        (while (search-forward word nil t)
-          (push (list word (line-number-at-pos)) matches))))
-    matches))
-
 (provide 'proofreader)
 ;;; proofreader.el ends here
