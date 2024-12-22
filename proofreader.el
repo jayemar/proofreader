@@ -396,18 +396,18 @@
 (defalias 'proofreader-stop 'proofreader-quit)
 (defalias 'proofreader-disable 'proofreader-quit)
 
-(defun proofreader-toggle ()
+(defun proofreader--hook ()
   "Toggle proofreader mode from current state."
   (if proofreader-mode
-      (proofreader-disable)
-    (proofreader-enable)))
+      (proofreader-enable)
+    (proofreader-disable)))
 
 ;;;###autoload
 (define-minor-mode proofreader-mode
   "Toggle minor mode `proofreader-mode' on and off."
   :init-value nil
   ;; :lighter " pf"
-  :after-hook (proofreader-toggle)
+  :after-hook (proofreader--hook)
   :keymap (make-sparse-keymap))
 
 (provide 'proofreader)
