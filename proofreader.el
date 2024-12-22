@@ -40,6 +40,10 @@
   :init-value nil
   :lighter " pf")
 
+(defun proofreader--list-to-or-regex (l)
+  "Return a regex string that ORs the items in the list L."
+  (string-join (seq-map (lambda (i) (prin1-to-string i t)) l) "\\|"))
+
 ;;
 ;; Weasel Words
 ;;
@@ -74,23 +78,15 @@
   :group 'proofreader
   :type '(repeat string))
 
-(defun proofreader--list-to-or-regex (l)
-  "Return a regex string that ORs the items in the list L."
-  (string-join (seq-map (lambda (i) (prin1-to-string i t)) l) "\\|"))
-
 (defvar proofreader-weasel-regex
   (proofreader--list-to-or-regex proofreader-weasel-words)
   "Regex string to use use when searching for weasel words")
 
 (defun proofreader-highlight-weasel-words ()
-  "Highlight all occurrences of `proofreader-weasel-words' in current buffer."
+  "Highlight weasel words found in buffer."
   (interactive)
-  (let ((regex proofreader-weasel-regex))
-    (unhighlight-regexp t) ;; Clear existing highlights
-    (save-excursion
-      (goto-char (point-min))
-      (while (re-search-forward regex nil t)
-        (highlight-regexp regex 'highlight)))))
+  (highlight-regexp proofreader-weasel-regex 'highlight))
+
 
 ;;
 ;; Passive voice
@@ -317,6 +313,11 @@
     (format "\\b(%s)\\b[ ]*(%s)\\b" p1 p2)
     ))
 
+(defun proofreader-highlight-passive-voice ()
+  "Highlight phrases using the passive voice."
+  (interactive)
+  (highlight-regexp proofreader-passive-voice-regex 'idle-highlight))
+
 
 ;;
 ;; Double words
@@ -325,7 +326,7 @@
 (defun proofreader-highlight-repeated-words ()
   "Highlight instances where the same word appears twice in succession."
   (interactive)
-  (highlight-regexp "\\(\\<\\w+\\>\\)\\s-*\n?\\s-*\\1\\>" 'idle-highlight))
+  (highlight-regexp "\\(\\<\\w+\\>\\)\\s-*\n?\\s-*\\1\\>" 'isearch-fail))
 
 
 ;;
@@ -335,12 +336,9 @@
 (defun proofreader-start ()
   "Begin active proofreading of text in buffer."
   (interactive)
-
-  (highlight-regexp proofreader-weasel-regex 'highlight)
-
-  (proofreader-highlight-repeated-words)
-
-  )
+  (proofreader-highlight-weasel-words)
+  (proofreader-highlight-passive-voice)
+  (proofreader-highlight-repeated-words))
 
 (defun proofreader-quit ()
   "Stop active proofreader features."
@@ -353,9 +351,18 @@
 
 ;;
 ;; Misc workspace
-;;
+;; Mostly functions suggested by gptel
 
-(defun search-word-list (&optional my-word-list)
+(defun proofreader-highlight-weasel-words-gptel ()
+  "Highlight all occurrences of `proofreader-weasel-words' in current buffer."
+  (let ((regex proofreader-weasel-regex))
+    (unhighlight-regexp t) ;; Clear existing highlights
+    (save-excursion
+      (goto-char (point-min))
+      (while (re-search-forward regex nil t)
+        (highlight-regexp regex 'highlight)))))
+
+(defun proofreader-search-word-list (&optional my-word-list)
   "Search current buffer for any word in MY-WORD-LIST."
   (interactive)
   (let ((my-word-list proofreader-weasel-words)
