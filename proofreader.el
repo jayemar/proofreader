@@ -302,7 +302,7 @@
   :group 'proofreader
   :type '(repeat string))
 
-(defcustom proofreader-morningstar-words
+(defcustom proofreader-auxiliary-verbs
   '(am
     are
     is
@@ -334,7 +334,7 @@
 
 (defun proofreader-passive-voice-regex ()
   "Return the regex string used to recognize use of the passive voice."
-  (let ((p1 (proofreader--list-to-or-regex proofreader-morningstar-words))
+  (let ((p1 (proofreader--list-to-or-regex proofreader-auxiliary-verbs))
         (p2 (proofreader--list-to-or-regex proofreader-irregular-words)))
     (format "\\b\\(%s\\)\\b[[:space:]]*\\(\\w+ed\\|\\(?:%s\\)\\)\\b" p1 p2)))
 
@@ -378,14 +378,14 @@
          (when-let ((words (proofreader--read-file-list value)))
            (customize-set-value 'proofreader-irregular-words words))))
 
-(defcustom proofreader-morningstar-words-file nil
-  "Location of file with values to override `proofreader-morningstar-words'."
+(defcustom proofreader-auxiliary-verbs-file nil
+  "Location of file with values to override `proofreader-auxiliary-verbs'."
   :type 'file
   :initialize #'custom-initialize-reset
   :set (lambda (symbol value)
          (set-default symbol value)
          (when-let ((words (proofreader--read-file-list value)))
-           (customize-set-value 'proofreader-morningstar-words words))))
+           (customize-set-value 'proofreader-auxiliary-verbs words))))
 
 (defun proofreader-start ()
   "Begin active proofreading of text in buffer."
