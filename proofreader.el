@@ -397,8 +397,8 @@
          (when-let ((words (proofreader--read-file-list value)))
            (customize-set-value 'proofreader-auxiliary-verbs words))))
 
-(defun proofreader-start ()
-  "Begin active proofreading of text in buffer."
+(defun proofreader-enable ()
+  "Enable active proofreading of text in buffer."
   (interactive)
   (when proofreader-check-spelling
     (flyspell-buffer))
@@ -409,16 +409,11 @@
   (when proofreader-check-for-double-words
     (proofreader-highlight-repeated-words)))
 
-(defalias 'proofreader-enable #'proofreader-start)
-
-(defun proofreader-quit ()
-  "Stop active proofreader features."
+(defun proofreader-disable ()
+  "Disable active proofreader features."
   (interactive)
   (flyspell-mode-off)
   (unhighlight-regexp t))
-
-(defalias 'proofreader-stop #'proofreader-quit)
-(defalias 'proofreader-disable #'proofreader-quit)
 
 ;; Defined here so that it can be used by `proofreader--hook' before the
 ;; the call to `define-minor-mode' that would define the varirable.
