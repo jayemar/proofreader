@@ -62,6 +62,18 @@
   "If true, highlight duplicated words found in buffer."
   :type 'boolean)
 
+(defcustom proofreader-weasel-word-face 'highlight
+  "Face to use to indicate weasel words."
+  :type 'face)
+
+(defcustom proofreader-passive-voice-face 'idle-highlight
+  "Face to use to indicate uses of the passive voice."
+  :type 'face)
+
+(defcustom proofreader-double-word-face 'isearch-fail
+  "Face to use to indicate double words."
+  :type 'face)
+
 
 ;;
 ;; Weasel Words
@@ -103,7 +115,7 @@
 (defun proofreader-highlight-weasel-words ()
   "Highlight weasel words found in buffer."
   (interactive)
-  (highlight-regexp (proofreader-weasel-regex) 'highlight))
+  (highlight-regexp (proofreader-weasel-regex) proofreader-weasel-word-face))
 
 
 ;;
@@ -329,7 +341,8 @@
 (defun proofreader-highlight-passive-voice ()
   "Highlight phrases using the passive voice."
   (interactive)
-  (highlight-regexp (proofreader-passive-voice-regex) 'idle-highlight))
+  (highlight-regexp
+   (proofreader-passive-voice-regex) proofreader-passive-voice-face))
 
 
 ;;
@@ -339,7 +352,8 @@
 (defun proofreader-highlight-repeated-words ()
   "Highlight instances where the same word appears twice in succession."
   (interactive)
-  (highlight-regexp "\\(\\<\\w+\\>\\)\\s-*\n?\\s-*\\1\\>" 'isearch-fail))
+  (highlight-regexp
+   "\\(\\<\\w+\\>\\)\\s-*\n?\\s-*\\1\\>" proofreader-double-word-face))
 
 
 ;;
