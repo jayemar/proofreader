@@ -4,7 +4,7 @@
 
 ;; Author: Joe Reinhart
 ;; URL: https://github.com/jayemar/proofreader
-;; Keywords: proofreader, writing
+;; Keywords: wp, docs
 ;; Version: 0.1.0
 ;; Package-Requires: ((emacs "27.1"))
 ;; This file is NOT part of GNU Emacs.
