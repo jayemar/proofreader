@@ -1,4 +1,4 @@
-;;; proofreader --- Proof-reading tool for Eamcs -*- coding: utf-8; lexical-binding: t; -*-
+;;; proofreader.el --- Proof-reading tool for Eamcs -*- coding: utf-8; lexical-binding: t; -*-
 
 ;; Copyright (c) 2024 Joe Reinhart <joseph.reinhart@gmail.com>
 
@@ -38,7 +38,7 @@
   "Read FILE and return phrase list."
   (when (and file (file-exists-p file))
     (with-temp-buffer
-      (insert-file file)
+      (insert-file-contents file)
       (split-string (buffer-substring (point-min) (point-max)) "\n" t "\s*"))))
 
 (defun proofreader--list-to-or-regex (l)
@@ -52,26 +52,32 @@
 
 (defcustom proofreader-check-for-weasel-words t
   "If true, highlight weasel words found in buffer."
+  :group 'proofreader
   :type 'boolean)
 
 (defcustom proofreader-check-for-passive-voice t
   "If true, highlight passages that use the passive voice in buffer."
+  :group 'proofreader
   :type 'boolean)
 
 (defcustom proofreader-check-for-double-words t
   "If true, highlight duplicated words found in buffer."
+  :group 'proofreader
   :type 'boolean)
 
 (defcustom proofreader-weasel-word-face 'highlight
   "Face to use to indicate weasel words."
+  :group 'proofreader
   :type 'face)
 
 (defcustom proofreader-passive-voice-face 'idle-highlight
   "Face to use to indicate uses of the passive voice."
+  :group 'proofreader
   :type 'face)
 
 (defcustom proofreader-double-word-face 'isearch-fail
   "Face to use to indicate double words."
+  :group 'proofreader
   :type 'face)
 
 
@@ -105,7 +111,8 @@
     very
     "are a number"
     "is a number")
-  "List words or phrases that sound good without conveying information"
+  "List words or phrases that sound good without conveying information."
+  :group 'proofreader
   :type '(repeat string))
 
 (defun proofreader-weasel-regex ()
@@ -362,6 +369,7 @@
 
 (defcustom proofreader-weasel-words-file nil
   "Location of file with values to override `proofreader-weasel-words'."
+  :group 'proofreader
   :type 'file
   :initialize #'custom-initialize-reset
   :set (lambda (symbol value)
@@ -371,6 +379,7 @@
 
 (defcustom proofreader-irregular-words-file nil
   "Location of file with values to override `proofreader-irregular-words'."
+  :group 'proofreader
   :type 'file
   :initialize #'custom-initialize-reset
   :set (lambda (symbol value)
@@ -380,6 +389,7 @@
 
 (defcustom proofreader-auxiliary-verbs-file nil
   "Location of file with values to override `proofreader-auxiliary-verbs'."
+  :group 'proofreader
   :type 'file
   :initialize #'custom-initialize-reset
   :set (lambda (symbol value)
@@ -399,7 +409,7 @@
   (when proofreader-check-for-double-words
     (proofreader-highlight-repeated-words)))
 
-(defalias 'proofreader-enable 'proofreader-start)
+(defalias 'proofreader-enable #'proofreader-start)
 
 (defun proofreader-quit ()
   "Stop active proofreader features."
@@ -407,8 +417,12 @@
   (flyspell-mode-off)
   (unhighlight-regexp t))
 
-(defalias 'proofreader-stop 'proofreader-quit)
-(defalias 'proofreader-disable 'proofreader-quit)
+(defalias 'proofreader-stop #'proofreader-quit)
+(defalias 'proofreader-disable #'proofreader-quit)
+
+;; Defined here so that it can be used by `proofreader--hook' before the
+;; the call to `define-minor-mode' that would define the varirable.
+(defvar proofreader-mode)
 
 (defun proofreader--hook ()
   "Toggle proofreader mode from current state."
