@@ -397,6 +397,7 @@
          (when-let ((words (proofreader--read-file-list value)))
            (customize-set-value 'proofreader-auxiliary-verbs words))))
 
+;;;###autoload
 (defun proofreader-enable ()
   "Enable active proofreading of text in buffer."
   (interactive)
@@ -409,6 +410,7 @@
   (when proofreader-check-for-double-words
     (proofreader-highlight-repeated-words)))
 
+;;;###autoload
 (defun proofreader-disable ()
   "Disable active proofreader features."
   (interactive)
